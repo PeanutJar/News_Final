@@ -1,75 +1,158 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Text, SafeAreaView, StyleSheet, View, ScrollView, FlatList, ActivityIndicator, TextInput, RefreshControl } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import React, { useState, useEffect } from 'react';
+import LottieView from 'lottie-react-native';
+import Animated from 'react-native-reanimated';
+import filter from "lodash.filter";
 
-export default function HomeScreen() {
+import Article from "./Article";
+
+interface ARTICLE {
+  title?: string;
+  description?: string;
+  pubDate?: string;
+}
+
+export default App;
+
+function App() {
+  const [articles, setArticles] = useState([]); //usestate for news articles
+  const [loading, setLoading] = useState(true); //usestate for loading page
+  const [anim, setAnimation] = useState(true); //usestate for animation
+  const [search, setSearch] = useState("");  //usestate for search query
+  const [fulldata, setFullData] = useState([]); //usestate for transfer of new preview of data
+  const [refreshing, setRefreshing] = useState(false); //usestate for refreshing/updating article list
+
+
+//this is utilizing fetch (opposed to using Axios)
+  const GetNews = async () => {
+    //the current api being used is Newsdata.io's free api. If the current api url dodes not work simply replace the url with a new api key/link from Newsdata.io
+    const apiKey = "pub_9c0dbf1e4af74b1eb00da71e4e2c5901";
+    const apiURL = "https://newsdata.io/api/1/latest?apikey=" + apiKey + "&country=wo&language=en&image=1";
+    
+    //setLoading(true);
+    try {
+      const response = await fetch(apiURL); //fetches json file
+      const json = await response.json(); //makes it readable to program (basicaly stringifies it)
+      console.log(json); // Add this
+      setArticles(json.results); //whatever data we get
+      console.log(json.results);
+      setFullData(json.results)
+    }
+    catch(error) { //if error
+      console.error(error);
+    }
+    finally { //completes function
+        setLoading(false);
+    }
+    
+  };
+
+  //renders after first instance of 
+  useEffect(() => {
+    GetNews();
+  },[])
+
+  //enables refresshing, rerenders new data, then disbales refreshing
+  const onRefresh = async () => {
+  setRefreshing(true);
+  await GetNews();     
+  setRefreshing(false);
+};
+
+  //collects data relavent to search query
+  const handleSearch = (query : string) => {
+    setSearch(query);
+    const formattedQuery = query.toLowerCase();
+    const filtereddata = filter(fulldata, (item) => {
+      return(contains(item, formattedQuery));
+    });
+    setArticles(filtereddata);
+  }
+  //passes relavent date from query for articles' titles, descriptions, and publish dates, then passes back those articles that matches
+  const contains = (item: ARTICLE, query : string) => {
+    const { title, description, pubDate } = item;
+    const lowerTitle = title ? title.toLowerCase() : "";
+    const lowerDescription = description ? description.toLowerCase() : "";
+    const lowerPubDate = pubDate ? pubDate.toLowerCase() : "";
+    //const {title, description, pubDate}
+    if(lowerTitle.includes(query) || lowerDescription.includes(query) || lowerPubDate.includes(query)) {
+      return true;
+    }
+    return false;
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <SafeAreaView style={styles.container}>
+
+      {/*plays loading anmation untl fully rendered
+      while both loading and anim are not true*/}
+      {(loading || anim) ? ( //ok for SOME odd reason when doing the this await variable thing "&&" and "||" have swapped roles. "&&" being 'or' and
+      //"||" being 'and'.
+        <LottieView style={{width:300, height:300}}
+        source={require("../../assets/News.json")}
+        autoPlay
+        loop={false}
+        resizeMode='cover'
+        onAnimationFinish={() => setAnimation(false)}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      ) : (
+        //allows for multiple objects to be entered
+        <> 
+        <View style={{position:'absolute',top:0,backgroundColor: '#80B1DE', width:'110%',height:'4%'}}></View>
+        <View style={styles.headerbox}> {/*news header*/}
+          <Text style={styles.headertext}> NEWS </Text>
+        </View>
+
+        <TextInput style={styles.stylebox} placeholder='Search' clearButtonMode='always'
+          autoCorrect={false}
+          autoCapitalize="none"
+          value={search}
+          onChangeText={(query) => handleSearch(query)}
+        />
+
+        <FlatList //list of news articles
+          data={articles}
+          renderItem={({ item }) => <Article article={item} />}
+          keyExtractor={(item, index) => index.toString()} //extracts article by title basis
+          style={{flex:.82}}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        />
+        </>
+      )}
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: '#ecf0f1',
     alignItems: 'center',
-    gap: 8,
+    padding: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  headerbox: {
+    width: '110%',
+    backgroundColor: '#80B1DE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex:0.15
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  headertext: {
+    fontSize: 60,
+    color: 'white',
+    fontWeight: 'bold',
   },
+  stylebox: {
+    borderColor:'#CFCFCF',
+    borderWidth:1.5,
+    borderRadius:1,
+    flex: 0.03,
+    justifyContent:'center',
+    marginTop: 5,
+    marginBottom: 5,
+    width: '80%',
+  }
+
 });
