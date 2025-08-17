@@ -43,6 +43,13 @@ function App() {
     GetNews();
   },[])
 
+  //enables refresshing, rerenders new data, then disbales refreshing
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await GetNews();     
+    setRefreshing(false);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
 
@@ -70,6 +77,7 @@ function App() {
           renderItem={({ item }) => <Article article={item} />}
           keyExtractor={(item, index) => index.toString()} //extracts article by title basis
           style={{flex:.82}}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         />
       
        </>
