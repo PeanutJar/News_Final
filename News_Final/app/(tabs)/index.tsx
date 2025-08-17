@@ -7,6 +7,12 @@ import filter from "lodash.filter";
 
 import Article from "./Article";
 
+interface ARTICLE {
+  title?: string;
+  description?: string;
+  pubDate?: string;
+}
+
 export default App;
 
 function App() {
@@ -40,20 +46,6 @@ function App() {
         setLoading(false);
     }
     
-    /*
-    fetch(apiURL)
-      .then((res) => {
-        return res.json(); //convert it to a readable format
-      })
-      .then((data) => {
-        setArticles(data);
-        console.log(data);
-      })
-      */
-
-      //let result = await fetch(apiURL);
-     // result = await result.json();
-      //setArticles(result)
   };
 
   //renders after first instance of 
@@ -69,7 +61,7 @@ function App() {
 };
 
   //collects data relavent to search query
-  const handleSearch = (query) => {
+  const handleSearch = (query : string) => {
     setSearch(query);
     const formattedQuery = query.toLowerCase();
     const filtereddata = filter(fulldata, (item) => {
@@ -78,7 +70,8 @@ function App() {
     setArticles(filtereddata);
   }
   //passes relavent date from query for articles' titles, descriptions, and publish dates, then passes back those articles that matches
-  const contains = ({title, description, pubDate}, query) => {
+  const contains = (item: ARTICLE, query : string) => {
+    const { title, description, pubDate } = item;
     const lowerTitle = title ? title.toLowerCase() : "";
     const lowerDescription = description ? description.toLowerCase() : "";
     const lowerPubDate = pubDate ? pubDate.toLowerCase() : "";
@@ -92,21 +85,22 @@ function App() {
   return (
     <SafeAreaView style={styles.container}>
 
-      //plays loading anmation untl fully rendered
-      //whille both loading and anim are not true
+      {/*plays loading anmation untl fully rendered
+      while both loading and anim are not true*/}
       {(loading || anim) ? ( //ok for SOME odd reason when doing the this await variable thing "&&" and "||" have swapped roles. "&&" being 'or' and
       //"||" being 'and'.
         <LottieView style={{width:300, height:300}}
-        source={require("./LoadingAnimation.json")}
+        source={require("../../assets/News.json")}
         autoPlay
         loop={false}
         resizeMode='cover'
         onAnimationFinish={() => setAnimation(false)}
         />
       ) : (
-        <> //allows for multiple objects to be entered
+        //allows for multiple objects to be entered
+        <> 
         <View style={{position:'absolute',top:0,backgroundColor: '#80B1DE', width:'110%',height:'4%'}}></View>
-        <View style={styles.headerbox}> //news header
+        <View style={styles.headerbox}> {/*news header*/}
           <Text style={styles.headertext}> NEWS </Text>
         </View>
 
@@ -140,10 +134,6 @@ const styles = StyleSheet.create({
   },
   headerbox: {
     width: '110%',
-    //height: '10%',
-    //padding: 5,
-    //position: 'absolute',
-    //top: 0,
     backgroundColor: '#80B1DE',
     alignItems: 'center',
     justifyContent: 'center',
@@ -155,12 +145,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   stylebox: {
-    //paddingHoriontal:20, 
-    //paddingVertical:10, 
     borderColor:'#CFCFCF',
     borderWidth:1.5,
     borderRadius:1,
-    //width: '80%',
     flex: 0.03,
     justifyContent:'center',
     marginTop: 5,
